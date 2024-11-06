@@ -28,6 +28,7 @@
         /// </summary>
         private void InitializeComponent()
         {
+            this.components = new System.ComponentModel.Container();
             System.ComponentModel.ComponentResourceManager resources = new System.ComponentModel.ComponentResourceManager(typeof(Wnd_Main));
             this.label1 = new System.Windows.Forms.Label();
             this.label3 = new System.Windows.Forms.Label();
@@ -39,6 +40,8 @@
             this.Lbl_Joystick = new System.Windows.Forms.Label();
             this.label4 = new System.Windows.Forms.Label();
             this.Lbl_ClientSize = new System.Windows.Forms.Label();
+            this.controllerTime = new System.Windows.Forms.Timer(this.components);
+            this.controllerBTN = new System.Windows.Forms.Timer(this.components);
             this.SuspendLayout();
             // 
             // label1
@@ -47,7 +50,7 @@
             this.label1.Location = new System.Drawing.Point(16, 11);
             this.label1.Margin = new System.Windows.Forms.Padding(4, 0, 4, 0);
             this.label1.Name = "label1";
-            this.label1.Size = new System.Drawing.Size(57, 16);
+            this.label1.Size = new System.Drawing.Size(86, 25);
             this.label1.TabIndex = 0;
             this.label1.Text = "Screen :";
             // 
@@ -57,7 +60,7 @@
             this.label3.Location = new System.Drawing.Point(16, 59);
             this.label3.Margin = new System.Windows.Forms.Padding(4, 0, 4, 0);
             this.label3.Name = "label3";
-            this.label3.Size = new System.Drawing.Size(65, 16);
+            this.label3.Size = new System.Drawing.Size(99, 25);
             this.label3.TabIndex = 2;
             this.label3.Text = "In-Game :";
             // 
@@ -70,9 +73,9 @@
             // 
             // Txt_Log
             // 
-            this.Txt_Log.Anchor = ((System.Windows.Forms.AnchorStyles)((((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom)
-                        | System.Windows.Forms.AnchorStyles.Left)
-                        | System.Windows.Forms.AnchorStyles.Right)));
+            this.Txt_Log.Anchor = ((System.Windows.Forms.AnchorStyles)((((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom) 
+            | System.Windows.Forms.AnchorStyles.Left) 
+            | System.Windows.Forms.AnchorStyles.Right)));
             this.Txt_Log.Font = new System.Drawing.Font("Microsoft Sans Serif", 8.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
             this.Txt_Log.Location = new System.Drawing.Point(12, 98);
             this.Txt_Log.Name = "Txt_Log";
@@ -86,7 +89,7 @@
             this.label2.Location = new System.Drawing.Point(16, 43);
             this.label2.Margin = new System.Windows.Forms.Padding(4, 0, 4, 0);
             this.label2.Name = "label2";
-            this.label2.Size = new System.Drawing.Size(47, 16);
+            this.label2.Size = new System.Drawing.Size(73, 25);
             this.label2.TabIndex = 1;
             this.label2.Text = "Client :";
             // 
@@ -96,7 +99,7 @@
             this.Lbl_Screen.Location = new System.Drawing.Point(81, 11);
             this.Lbl_Screen.Margin = new System.Windows.Forms.Padding(4, 0, 4, 0);
             this.Lbl_Screen.Name = "Lbl_Screen";
-            this.Lbl_Screen.Size = new System.Drawing.Size(0, 16);
+            this.Lbl_Screen.Size = new System.Drawing.Size(0, 25);
             this.Lbl_Screen.TabIndex = 6;
             // 
             // Lbl_Client
@@ -105,7 +108,7 @@
             this.Lbl_Client.Location = new System.Drawing.Point(81, 43);
             this.Lbl_Client.Margin = new System.Windows.Forms.Padding(4, 0, 4, 0);
             this.Lbl_Client.Name = "Lbl_Client";
-            this.Lbl_Client.Size = new System.Drawing.Size(0, 16);
+            this.Lbl_Client.Size = new System.Drawing.Size(0, 25);
             this.Lbl_Client.TabIndex = 7;
             // 
             // Lbl_Joystick
@@ -114,7 +117,7 @@
             this.Lbl_Joystick.Location = new System.Drawing.Point(81, 59);
             this.Lbl_Joystick.Margin = new System.Windows.Forms.Padding(4, 0, 4, 0);
             this.Lbl_Joystick.Name = "Lbl_Joystick";
-            this.Lbl_Joystick.Size = new System.Drawing.Size(0, 16);
+            this.Lbl_Joystick.Size = new System.Drawing.Size(0, 25);
             this.Lbl_Joystick.TabIndex = 8;
             // 
             // label4
@@ -123,7 +126,7 @@
             this.label4.Location = new System.Drawing.Point(16, 27);
             this.label4.Margin = new System.Windows.Forms.Padding(4, 0, 4, 0);
             this.label4.Name = "label4";
-            this.label4.Size = new System.Drawing.Size(76, 16);
+            this.label4.Size = new System.Drawing.Size(117, 25);
             this.label4.TabIndex = 9;
             this.label4.Text = "Client Size :";
             // 
@@ -132,12 +135,22 @@
             this.Lbl_ClientSize.AutoSize = true;
             this.Lbl_ClientSize.Location = new System.Drawing.Point(99, 27);
             this.Lbl_ClientSize.Name = "Lbl_ClientSize";
-            this.Lbl_ClientSize.Size = new System.Drawing.Size(0, 16);
+            this.Lbl_ClientSize.Size = new System.Drawing.Size(0, 25);
             this.Lbl_ClientSize.TabIndex = 13;
+            // 
+            // controllerTime
+            // 
+            this.controllerTime.Interval = 16;
+            this.controllerTime.Tick += new System.EventHandler(this.controllerTime_Tick);
+            // 
+            // controllerBTN
+            // 
+            this.controllerBTN.Interval = 16;
+            this.controllerBTN.Tick += new System.EventHandler(this.controllerBTN_Tick);
             // 
             // Wnd_Main
             // 
-            this.AutoScaleDimensions = new System.Drawing.SizeF(8F, 16F);
+            this.AutoScaleDimensions = new System.Drawing.SizeF(12F, 25F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.ClientSize = new System.Drawing.Size(434, 351);
             this.Controls.Add(this.Lbl_ClientSize);
@@ -154,6 +167,7 @@
             this.Margin = new System.Windows.Forms.Padding(4);
             this.Name = "Wnd_Main";
             this.Text = "Aliens: Extermination - Mouse";
+            this.Load += new System.EventHandler(this.Wnd_Main_Load);
             this.ResumeLayout(false);
             this.PerformLayout();
 
@@ -171,6 +185,8 @@
         private System.Windows.Forms.Label Lbl_Joystick;
         private System.Windows.Forms.Label label4;
         private System.Windows.Forms.Label Lbl_ClientSize;
+        private System.Windows.Forms.Timer controllerTime;
+        private System.Windows.Forms.Timer controllerBTN;
     }
 }
 

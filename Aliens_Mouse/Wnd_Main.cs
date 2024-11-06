@@ -5,6 +5,8 @@ using System.Runtime.InteropServices;
 using System.Windows.Forms;
 using System.Diagnostics;
 using System.Globalization;
+using Gma.System.MouseKeyHook;
+using SharpDX.XInput;
 
 namespace Aliens_Mouse
 {
@@ -16,19 +18,30 @@ namespace Aliens_Mouse
 
         private static int _ScreenWidth = 0;
         private static int _ScreenHeight = 0;
-        private static int _ClientWidth = 800;
-        private static int _ClientHeight = 600;
+        private static int _ClientWidth = 0;
+        private static int _ClientHeight = 0;
         private static bool _AutoClientSize = true;
 
         private static Point _MouseScreenPosition;
         private static Point _MouseClientPosition;
         private static Point _MouseInGamePosition;
+        
         private static IntPtr _MouseHookID = IntPtr.Zero;
 
         private static string Debug_MouseScreen;
         private static string Debug_MouseClient;
         private static string Debug_MouseJoystick;
         private static string Debug_ClientSize;
+
+
+        //Controller Hook 
+        private Controller controller = null;
+        const int newMin = 0;
+        const int newMax = 65535;
+        const int originalMin = -32768;
+        const int originalMax = 32767;
+        private static State state;
+        private static Gamepad gamepad;
 
         private static string _BgwErrorMsg = string.Empty;
         private static string _BgwErrorSrc = string.Empty;
@@ -182,8 +195,20 @@ namespace Aliens_Mouse
             }
             
             //Install system-wide mouse hook to intercep movements and buttons
-            ApplyMouseHook();
-
+            //ApplyMouseHook();
+            
+            Subscribe(); //Apply New MouseHook
+            try
+            {
+                CheckController(); //Check Controller and Apply Hook
+                controllerTime.Enabled = true;
+                controllerBTN.Enabled = true;
+            }
+            catch (Exception ex)
+            {
+                WriteLog("No controller connection is not detected");
+            }
+            
             //Starting ProcessHooking Timer
             _tProcess = new Timer();
             _tProcess.Interval = 500;
@@ -458,7 +483,7 @@ namespace Aliens_Mouse
             int bytesRead = 0;
             if (!ReadProcessMemory((int)_TargetProcess_Handle, Address, Buffer, 1, ref bytesRead))
             {
-                WriteLog("Cannot read memory at address 0x" + Address.ToString("X8"));
+                //WriteLog("Cannot read memory at address 0x" + Address.ToString("X8"));
             }
             return Buffer[0];
         }
@@ -468,7 +493,7 @@ namespace Aliens_Mouse
             int bytesRead = 0;
             if (!ReadProcessMemory((int)_TargetProcess_Handle, Address, Buffer, Buffer.Length, ref bytesRead))
             {
-                WriteLog("Cannot read memory at address 0x" + Address.ToString("X8"));
+                //WriteLog("Cannot read memory at address 0x" + Address.ToString("X8"));
             }
             return Buffer;
         }
@@ -538,7 +563,10 @@ namespace Aliens_Mouse
                 {
                     MSLLHOOKSTRUCT s = (MSLLHOOKSTRUCT)Marshal.PtrToStructure(lParam, typeof(MSLLHOOKSTRUCT));
                     _MouseScreenPosition.X = s.pt.X;
+                    Debug.WriteLine(_MouseScreenPosition.X);
                     _MouseScreenPosition.Y = s.pt.Y;
+                    Debug.WriteLine(_MouseScreenPosition.X);
+
                 }
                 else if ((UInt32)wParam == WM_LBUTTONDOWN)
                 {
@@ -576,15 +604,150 @@ namespace Aliens_Mouse
 
         #endregion
 
+        #region NewMouseHook
+        /**
+         *  This region mainly fixes the problem that the old version of Mouse Hook does not work on non-English versions of Windows 11 and Windows 10
+         *  此Region主要修复MouseHook在Windows11和10上不工作的问题
+         */
+        private IKeyboardMouseEvents m_GlobalHook;
+
+        public void Subscribe()
+        {
+            m_GlobalHook = Hook.GlobalEvents();
+            m_GlobalHook.MouseMoveExt += OnMouseMove; 
+            m_GlobalHook.MouseDownExt += MouseKeyDown;
+            m_GlobalHook.MouseUpExt += MouseKeyUp;
+
+        }
+
+        private void MouseKeyDown(object sender, MouseEventArgs e)
+        {
+            if (e.Button == MouseButtons.Left)
+            {
+                Apply_OR_ByteMask((int)_TargetProcess_MemoryBaseAddress + _P1_BTN_Offset, 0x10);
+            }
+            else if (e.Button == MouseButtons.Right)
+            {
+                Apply_OR_ByteMask((int)_TargetProcess_MemoryBaseAddress + _P1_BTN_Offset, 0x40);
+            }
+            else if(e.Button == MouseButtons.Middle)
+            {
+                Apply_OR_ByteMask((int)_TargetProcess_MemoryBaseAddress + _P1_BTN_Offset, 0x20);
+            }
+        }
+
+        private void MouseKeyUp(object sender,MouseEventArgs e)
+        {
+            if (e.Button == MouseButtons.Left)
+            {
+                Apply_AND_ByteMask((int)_TargetProcess_MemoryBaseAddress + _P1_BTN_Offset, 0xEF);
+            }
+            else if (e.Button == MouseButtons.Right)
+            {
+                Apply_AND_ByteMask((int)_TargetProcess_MemoryBaseAddress + _P1_BTN_Offset, 0xBF);
+            }
+            else if (e.Button == MouseButtons.Middle)
+            {
+                Apply_AND_ByteMask((int)_TargetProcess_MemoryBaseAddress + _P1_BTN_Offset, 0xDF);
+            }
+        }
+
+        private void OnMouseMove(object sender, MouseEventArgs e)
+        {
+            _MouseScreenPosition.X = e.X;
+            _MouseScreenPosition.Y = e.Y;
+
+        }
+
+
+        #endregion
+
+        #region ControllerHook
+
+
+        
+        private void CheckController()
+        {
+            var controllers = new[] { new Controller(UserIndex.One), new Controller(UserIndex.Two), new Controller(UserIndex.Three), new Controller(UserIndex.Four) };
+            foreach (var controller_select in controllers )
+            {
+                if (controller_select.IsConnected)
+                {
+                    controller = controller_select;
+                    WriteLog("2 Player controller is connected");
+                    state = controller.GetState();
+                    gamepad = state.Gamepad;
+                    break;
+                }
+                else
+                {
+                    throw new Exception();
+                }
+            }
+        }
+
+
+
+
+        #endregion
+
         #region Logger
 
         private static void WriteLog(String Data)
         {
+            Debug.WriteLine(DateTime.Now.ToString("[HH:mm:ss] ") + Data + "\n");
             _This.Txt_Log.Text += DateTime.Now.ToString("[HH:mm:ss] ") + Data + "\n";
         }
 
-        #endregion        
+        #endregion
 
+        private void Wnd_Main_Load(object sender, EventArgs e)
+        {
+
+        }
+
+        private void controllerTime_Tick(object sender, EventArgs e)
+        {
+            byte[] bufferX = { (byte)(MapRange(gamepad.LeftThumbX) & 0xFF), (byte)(MapRange(gamepad.LeftThumbX) >> 8) };
+            byte[] bufferY = { (byte)(MapRange(gamepad.LeftThumbY) & 0xFF), (byte)(MapRange(gamepad.LeftThumbY) >> 8) };
+            
+            WriteBytes((int)_TargetProcess_MemoryBaseAddress + _P2_X_Offset, bufferX);
+            WriteBytes((int)_TargetProcess_MemoryBaseAddress + _P2_Y_Offset, bufferY);
+        }
+
+        private int MapRange(int value)
+        {
+            float scale = (float)(newMax - newMin) / (originalMax - originalMin);
+            return (int)((originalMax - value) * scale + newMin + 0.5f); // 反转并四舍五入 
+        }
+
+        private void controllerBTN_Tick(object sender, EventArgs e)
+        {
+            if(gamepad.RightTrigger != 0) //开火
+            {
+                Apply_OR_ByteMask((int)_TargetProcess_MemoryBaseAddress + _P2_BTN_Offset, 0x10);
+            }
+            else
+            {
+                Apply_AND_ByteMask((int)_TargetProcess_MemoryBaseAddress + _P2_BTN_Offset, 0xEF);
+            }
+            if((gamepad.Buttons & GamepadButtonFlags.RightShoulder) != 0) // 火焰喷射器
+            {
+                Apply_OR_ByteMask((int)_TargetProcess_MemoryBaseAddress + _P2_BTN_Offset, 0x40);
+            }
+            else
+            {
+                Apply_AND_ByteMask((int)_TargetProcess_MemoryBaseAddress + _P2_BTN_Offset, 0xBF);
+            }
+            if ((gamepad.Buttons & GamepadButtonFlags.B) != 0) // 手雷
+            {
+                Apply_OR_ByteMask((int)_TargetProcess_MemoryBaseAddress + _P2_BTN_Offset, 0x20);
+            }
+            else
+            {
+                Apply_AND_ByteMask((int)_TargetProcess_MemoryBaseAddress + _P2_BTN_Offset, 0xDF);
+            }
+        }
     }
 
 }
